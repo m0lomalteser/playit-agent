@@ -1,0 +1,34 @@
+name: Build macOS Silicon Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build_macos_silicon:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Build release
+        run: |
+          cargo build --target aarch64-apple-darwin --release --all
+
+      - name: Stage macOS release assets
+        shell: bash
+        run: |
+          mkdir -p target/release-assets
+          cp "./target/aarch64-apple-darwin/release/playitd" "target/release-assets/playit-macos-arm64"
+          cp "./target/aarch64-apple-darwin/release/playit-cli" "target/release-assets/playit-cli-macos-arm64"
+
+      - name: Upload macOS release assets
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          files: target/release-assets/*
