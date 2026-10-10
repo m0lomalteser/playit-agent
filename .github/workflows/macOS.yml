@@ -1,8 +1,7 @@
-name: Build macOS Silicon Release
+name: Build macOS Silicon Release (Manuell & Unsigned)
 
 on:
-  release:
-    types: [created]
+  workflow_dispatch: # Ermöglicht das manuelle Auslösen über die GitHub-Oberfläche
 
 jobs:
   build_macos_silicon:
@@ -19,6 +18,12 @@ jobs:
         run: |
           cargo build --target aarch64-apple-darwin --release --all
 
+      - name: Remove Signatures (Unsigned)
+        run: |
+          # Entfernt jegliche standardmäßige Code-Signatur von den erzeugten Binaries
+          codesign --remove-signature "./target/aarch64-apple-darwin/release/playitd"
+          codesign --remove-signature "./target/aarch64-apple-darwin/release/playit-cli"
+
       - name: Stage macOS release assets
         shell: bash
         run: |
@@ -26,9 +31,8 @@ jobs:
           cp "./target/aarch64-apple-darwin/release/playitd" "target/release-assets/playit-macos-arm64"
           cp "./target/aarch64-apple-darwin/release/playit-cli" "target/release-assets/playit-cli-macos-arm64"
 
-      - name: Upload macOS release assets
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: target/release-assets/*
+          name: playit-macos-silicon-unsigned
+          path: target/release-assets/*
